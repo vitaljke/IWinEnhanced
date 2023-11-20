@@ -1,0 +1,11 @@
+## Interface: 11200
+## Title: IWinEnhanced
+## Notes: Smart macros for warriors
+## SavedVariables: 
+
+# Libs
+libs\libdebuff.lua
+
+# Core
+IWinEnhanced.lua
+
