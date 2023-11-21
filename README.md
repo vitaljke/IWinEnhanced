@@ -5,9 +5,9 @@ Make macros with commands. Put them on your action bars. Enjoy!
 
 
 ## Commands
-    /idps         Open the configuration GUI
-    /tank        Open the configuration import/export dialog
-    /ichase           Open the ticket Dialog
+    /idps        Single target DPS rotation
+    /tank        Single target threat rotation
+    /ichase      Stick to target with charge, intercept, hamstring
 
 ## Required Addons
 You need one of the following addons:
