@@ -1,6 +1,6 @@
 # IWinEnhanced
 
-Smart macros for Warriors
+Smart macros for Warriors.
 Make macros with commands. Put them on your action bars. Enjoy!
 
 
