@@ -2,10 +2,6 @@
 ## Title: IWinEnhanced
 ## Notes: Smart macros for warriors
 ## SavedVariables: 
+## OptionalDeps: ShaguTweaks, pfUI
 
-# Libs
-libs\libdebuff.lua
-
-# Core
 IWinEnhanced.lua
-
