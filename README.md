@@ -6,7 +6,7 @@ Make macros with commands. Put them on your action bars. Enjoy!
 
 ## Commands
     /idps        Single target DPS rotation
-    /tank        Single target threat rotation
+    /itank       Single target threat rotation
     /ichase      Stick to target with charge, intercept, hamstring
 
 ## Required Addons
