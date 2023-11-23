@@ -6,7 +6,8 @@ Smart macros for Warriors. Make macros with commands. Put them on your action ba
 ## Commands
     /idps        Single target DPS rotation
     /itank       Single target threat rotation
-    /ichase      Stick to your target with charge, intercept, hamstring
+    /ichase      Stick to your target with Charge, Intercept, Hamstring
+    /ikick       Kick with Pummel or Shield Bash
 
 ## Required Addons
 You need one of the following addons:
