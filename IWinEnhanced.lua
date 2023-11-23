@@ -292,10 +292,9 @@ function IWin:GetRageToReserve(spell, trigger, unit)
 	elseif trigger == "buff" or trigger == "partybuff" then
 		spellTriggerTime = IWin:GetBuffRemaining(unit, spell) or 0
 	end
-	if IWin_Settings["ragePerSecondPrediction"] < 1 then
-		local reservedRageTime = 0
-	else
-		local reservedRageTime = IWin_CombatVar["reservedRage"] / IWin_Settings["ragePerSecondPrediction"]
+	local reservedRageTime = 0
+	if IWin_Settings["ragePerSecondPrediction"] > 0 then
+		reservedRageTime = IWin_CombatVar["reservedRage"] / IWin_Settings["ragePerSecondPrediction"]
 	end
 	local timeToReserveRage = math.max(0, spellTriggerTime - IWin_Settings["rageTimeToReserveBuffer"] - reservedRageTime)
 	if trigger == "partybuff" or IWin:IsSpellLearnt(spell) then
