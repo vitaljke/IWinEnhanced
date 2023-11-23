@@ -327,6 +327,20 @@ function IWin:IsShieldEquipped()
 	return false
 end
 
+IWin_UnitClassification = {
+	["worldboss"] = true,
+	["rareelite"] = true,
+	["elite"] = true,
+	["rare"] = false,
+	["normal"] = false,
+	["trivial"] = false,
+}
+
+function IWin:IsElite()
+	local classification = UnitClassification("target")
+	return IWin_UnitClassification[classification]
+end
+
 ---- Actions ----
 function IWin:TargetEnemy()
 	if not UnitExists("target") or UnitIsDead("target") or UnitIsFriend("target", "player") then
@@ -334,12 +348,18 @@ function IWin:TargetEnemy()
 	end
 end
 
-function IWin:StartAttack()
+function IWin:StartAttackOld()
 	if not IWin_Settings["AttackSlot"] then
 		IWin_Settings["AttackSlot"] = IWin:GetActionSlot("Attack")
 	end
 	if not IsCurrentAction(IWin_Settings["AttackSlot"]) then 
 		UseAction(IWin_Settings["AttackSlot"]) 
+	end
+end
+
+function IWin:StartAttack()
+	if not PlayerFrame.inCombat then
+		AttackTarget()
 	end
 end
 
@@ -362,7 +382,18 @@ function IWin:BerserkerStanceInstance()
 end
 
 function IWin:Bloodrage()
-	if IWin:IsSpellLearnt("Bloodrage") then
+	if IWin:IsSpellLearnt("Bloodrage")
+		and (
+				IWin:IsStanceActive("Defensive Stance")
+			or (
+					UnitAffectingCombat("player")
+				and (
+						IWin:IsSpellLearnt("Mortal Strike")
+					or IWin:IsSpellLearnt("Bloodthirst")
+					or IWin:IsSpellLearnt("Shield Slam")
+					)
+				)
+			) then
 		CastSpellByName("Bloodrage")
 	end
 end
@@ -412,7 +443,7 @@ function IWin:Execute()
 end
 
 function IWin:SetReservedRageExecute()
-	if not UnitIsPlusMob("target") or Iwin:IsExecutePhase() then
+	if not IWin:IsElite() or IWin:IsExecutePhase() then
 		IWin:SetReservedRage("Execute", "cooldown")
 	end
 end
@@ -589,7 +620,8 @@ end
 SLASH_IDEBUG1 = '/idebug'
 function SlashCmdList.IDEBUG()
 	--DEFAULT_CHAT_FRAME:AddMessage()
-	if IWin:IsShieldEquipped() then DEFAULT_CHAT_FRAME:AddMessage("WW " .. IWin:GetCooldownRemaining("Whirlwind")) end
+	local classification = UnitClassification("target")
+	if IWin_UnitClassification[classification] then DEFAULT_CHAT_FRAME:AddMessage("WW ") end
 end
 
 ---- idps button ----
@@ -598,19 +630,26 @@ function SlashCmdList.IDPS()
 	IWin_CombatVar["reservedRage"] = 0
 	IWin:TargetEnemy()
 	IWin:DPSStance()
+	IWin:Bloodrage()
 	IWin:BattleShoutFaded()
 	IWin:SetReservedRage("Battle Shout", "buff", "player")
+	DEFAULT_CHAT_FRAME:AddMessage("BS " .. IWin_CombatVar["reservedRage"])
 	IWin:Overpower()
 	IWin:Execute()
 	IWin:SetReservedRageExecute()
+	DEFAULT_CHAT_FRAME:AddMessage("EX " .. IWin_CombatVar["reservedRage"])
 	IWin:ShieldSlam()
 	IWin:SetReservedRage("Shield Slam", "cooldown")
+	DEFAULT_CHAT_FRAME:AddMessage("SS " .. IWin_CombatVar["reservedRage"])
 	IWin:MortalStrike()
 	IWin:SetReservedRage("Mortal Strike", "cooldown")
+	DEFAULT_CHAT_FRAME:AddMessage("MS " .. IWin_CombatVar["reservedRage"])
 	IWin:Bloodthirst()
 	IWin:SetReservedRage("Bloodthirst", "cooldown")
+	DEFAULT_CHAT_FRAME:AddMessage("BT " .. IWin_CombatVar["reservedRage"])
 	IWin:Whirlwind()
 	IWin:SetReservedRage("Whirlwind", "cooldown")
+	DEFAULT_CHAT_FRAME:AddMessage("WW " .. IWin_CombatVar["reservedRage"])
 	IWin:BerserkerRage()
 	IWin:HeroicStrike()
 	IWin:ChargeOpenWorld()
