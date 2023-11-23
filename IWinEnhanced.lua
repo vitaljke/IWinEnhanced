@@ -292,7 +292,11 @@ function IWin:GetRageToReserve(spell, trigger, unit)
 	elseif trigger == "buff" or trigger == "partybuff" then
 		spellTriggerTime = IWin:GetBuffRemaining(unit, spell) or 0
 	end
-	local reservedRageTime = IWin_CombatVar["reservedRage"] / IWin_Settings["ragePerSecondPrediction"]
+	if IWin_Settings["ragePerSecondPrediction"] < 1 then
+		local reservedRageTime = 0
+	else
+		local reservedRageTime = IWin_CombatVar["reservedRage"] / IWin_Settings["ragePerSecondPrediction"]
+	end
 	local timeToReserveRage = math.max(0, spellTriggerTime - IWin_Settings["rageTimeToReserveBuffer"] - reservedRageTime)
 	if trigger == "partybuff" or IWin:IsSpellLearnt(spell) then
 		return math.max(0, IWin_RageCost[spell] - IWin_Settings["ragePerSecondPrediction"] * timeToReserveRage)
@@ -633,23 +637,17 @@ function SlashCmdList.IDPS()
 	IWin:Bloodrage()
 	IWin:BattleShoutFaded()
 	IWin:SetReservedRage("Battle Shout", "buff", "player")
-	DEFAULT_CHAT_FRAME:AddMessage("BS " .. IWin_CombatVar["reservedRage"])
 	IWin:Overpower()
 	IWin:Execute()
 	IWin:SetReservedRageExecute()
-	DEFAULT_CHAT_FRAME:AddMessage("EX " .. IWin_CombatVar["reservedRage"])
 	IWin:ShieldSlam()
 	IWin:SetReservedRage("Shield Slam", "cooldown")
-	DEFAULT_CHAT_FRAME:AddMessage("SS " .. IWin_CombatVar["reservedRage"])
 	IWin:MortalStrike()
 	IWin:SetReservedRage("Mortal Strike", "cooldown")
-	DEFAULT_CHAT_FRAME:AddMessage("MS " .. IWin_CombatVar["reservedRage"])
 	IWin:Bloodthirst()
 	IWin:SetReservedRage("Bloodthirst", "cooldown")
-	DEFAULT_CHAT_FRAME:AddMessage("BT " .. IWin_CombatVar["reservedRage"])
 	IWin:Whirlwind()
 	IWin:SetReservedRage("Whirlwind", "cooldown")
-	DEFAULT_CHAT_FRAME:AddMessage("WW " .. IWin_CombatVar["reservedRage"])
 	IWin:BerserkerRage()
 	IWin:HeroicStrike()
 	IWin:ChargeOpenWorld()
