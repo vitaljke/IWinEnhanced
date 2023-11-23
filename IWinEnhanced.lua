@@ -109,12 +109,6 @@ IWin_RageCost = {
 	["Whirlwind"] = 25,
 }
 
-IWin_Stance = {
-	[1] = "Battle",
-	[2] = "Defensive",
-	[3] = "Berserker",
-}
-
 ---- Functions ----
 function IWin:GetBuffIndex(unit, spell)
 	local index = 1
@@ -251,7 +245,7 @@ function IWin:IsOverpowerAvailable()
 
 function IWin:IsCharging()
 	local chargeTimeActive = GetTime() - IWin_CombatVar["charge"]
-	return chargeTimeActive > 1
+	return chargeTimeActive < 1
 end
 
 function IWin:IsStanceActive(stance)
@@ -282,11 +276,11 @@ function IWin:IsInMeleeRange()
 end
 
 function IWin:GetStanceSwapRageRetain()
-	return IWin:GetTalentRank(1, 5) * 5
+	return math.min(IWin:GetTalentRank(1, 5) * 5, UnitMana("player"))
 end
 
 function IWin:IsStanceSwapMaxRageLoss(rage)
-	return rage <= UnitMana("player") - IWin:GetStanceSwapRageRetain()
+	return rage <= math.max(0, UnitMana("player") - IWin:GetStanceSwapRageRetain())
 end
 
 function IWin:GetRageToReserve(spell, trigger, unit)
@@ -316,6 +310,21 @@ end
 
 function IWin:IsTanking()
 	return UnitIsUnit("targettarget", "player")
+end
+
+function IWin:GetItemID(itemLink)
+	for itemID in string.gfind(itemLink, "|c%x+|Hitem:(%d+):%d+:%d+:%d+|h%[(.-)%]|h|r$") do
+		return itemID
+	end
+end
+
+function IWin:IsShieldEquipped()
+	local offHandLink = GetInventoryItemLink("player", 17)
+	if offHandLink then
+		local _, _, _, _, _, itemSubType = GetItemInfo(tonumber(IWin:GetItemID(offHandLink)))
+		return itemSubType == "Shields"
+	end
+	return false
 end
 
 ---- Actions ----
@@ -438,7 +447,7 @@ function IWin:Intercept()
 			)
 		and (
 				(
-					IWin:IsRageAvailable("Intercept")
+					IWin:IsRageCostAvailable("Intercept")
 					and (
 							IWin:IsStanceActive("Berserker Stance")
 							or IWin:GetStanceSwapRageRetain() >= IWin_RageCost["Intercept"]
@@ -449,7 +458,7 @@ function IWin:Intercept()
 		if not IWin:IsStanceActive("Berserker Stance") then
 			CastSpellByName("Berserker Stance")
 		end
-		if not IWin:IsRageAvailable("Intercept") then
+		if not IWin:IsRageCostAvailable("Intercept") then
 			CastSpellByName("Bloodrage")
 		end
 		CastSpellByName("Intercept")
@@ -471,18 +480,69 @@ function IWin:Overpower()
 	end
 end
 
+function IWin:Pummel()
+	if IWin:IsSpellLearnt("Pummel")
+		and not IWin:IsOnCooldown("Pummel")
+		and (
+				(
+					IWin:IsRageCostAvailable("Pummel")
+					and (
+							IWin:IsStanceActive("Berserker Stance")
+							or IWin:GetStanceSwapRageRetain() >= IWin_RageCost["Pummel"]
+						)
+				)
+				or not IWin:IsOnCooldown("Bloodrage")
+			)
+		and (
+				not IWin:IsShieldEquipped()
+				or IWin:IsStanceActive("Berserker Stance")
+			) then
+		if not IWin:IsStanceActive("Berserker Stance") then
+			CastSpellByName("Berserker Stance")
+		end
+		if not IWin:IsRageCostAvailable("Pummel") then
+			CastSpellByName("Bloodrage")
+		end
+		CastSpellByName("Pummel")
+	end
+end
+
 function IWin:Revenge()
 	if IWin:IsSpellLearnt("Revenge") and not IWin:IsOnCooldown("Revenge") and IWin:IsRageCostAvailable("Revenge") then
 		if not IWin:IsStanceActive("Defensive Stance") then
 			CastSpellByName("Defensive Stance")
 		end
-	CastSpellByName("Revenge")
+		CastSpellByName("Revenge")
 	end
 end
 
 function IWin:SetReservedRageRevenge()
 	if IWin:IsTanking() then
 		IWin:SetReservedRage("Revenge", "cooldown")
+	end
+end
+
+function IWin:ShieldBash()
+	if IWin:IsSpellLearnt("Shield Bash")
+		and not IWin:IsOnCooldown("Shield Bash")
+		and IWin:IsShieldEquipped() 
+		and (
+				(
+					IWin:IsRageCostAvailable("Shield Bash")
+					and (
+							not IWin:IsStanceActive("Berserker Stance")
+							or IWin:GetStanceSwapRageRetain() >= IWin_RageCost["Shield Bash"]
+						)
+				)
+				or not IWin:IsOnCooldown("Bloodrage")
+			) then
+		if IWin:IsStanceActive("Berserker Stance") then
+			CastSpellByName("Defensive Stance")
+		end
+		if not IWin:IsRageCostAvailable("Shield Bash") then
+			CastSpellByName("Bloodrage")
+		end
+		CastSpellByName("Shield Bash")
 	end
 end
 
@@ -529,7 +589,7 @@ end
 SLASH_IDEBUG1 = '/idebug'
 function SlashCmdList.IDEBUG()
 	--DEFAULT_CHAT_FRAME:AddMessage()
-	DEFAULT_CHAT_FRAME:AddMessage("WW " .. IWin:GetCooldownRemaining("Whirlwind"))
+	if IWin:IsShieldEquipped() then DEFAULT_CHAT_FRAME:AddMessage("WW " .. IWin:GetCooldownRemaining("Whirlwind")) end
 end
 
 ---- idps button ----
@@ -557,17 +617,6 @@ function SlashCmdList.IDPS()
 	IWin:StartAttack()
 end
 
----- ichase button ----
-SLASH_ICHASE1 = '/ichase'
-function SlashCmdList.ICHASE()
-	IWin_CombatVar["reservedRage"] = 0
-	IWin:TargetEnemy()
-	IWin:Charge()
-	IWin:Intercept()
-	IWin:Hamstring()
-	IWin:StartAttack()
-end
-
 -- itank button --
 SLASH_ITANK1 = '/itank'
 function SlashCmdList.ITANK()
@@ -592,3 +641,25 @@ function SlashCmdList.ITANK()
 	IWin:HeroicStrike()
 	IWin:StartAttack()
 end
+
+---- ichase button ----
+SLASH_ICHASE1 = '/ichase'
+function SlashCmdList.ICHASE()
+	IWin_CombatVar["reservedRage"] = 0
+	IWin:TargetEnemy()
+	IWin:Charge()
+	IWin:Intercept()
+	IWin:Hamstring()
+	IWin:StartAttack()
+end
+
+---- ikick button ----
+SLASH_IKICK1 = '/ikick'
+function SlashCmdList.IKICK()
+	IWin_CombatVar["reservedRage"] = 0
+	IWin:TargetEnemy()
+	IWin:ShieldBash()
+	IWin:Pummel()
+	IWin:StartAttack()
+end
+
