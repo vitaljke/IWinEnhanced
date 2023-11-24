@@ -19,6 +19,7 @@ IWin_Settings = {
 IWin_CombatVar = {
 	["dodge"] = 0,
 	["reservedRage"] = 0,
+	["reservedRageStance"] = nil,
 	["charge"] = 0,
 }
 
@@ -105,6 +106,7 @@ IWin_RageCost = {
 	["Shield Slam"] = 20,
 	["Slam"] = 15,
 	["Sunder Armor"] = 15 - IWin:GetTalentRank(3, 10),
+	["Sweeping Strikes"] = 30,
 	["Thunder Clap"] = 20 - IWin:GetThunderClapCostReduction(),
 	["Whirlwind"] = 25,
 }
@@ -344,6 +346,13 @@ function IWin:IsElite()
 	return IWin_UnitClassification[classification]
 end
 
+function IWin:IsRageReservedStance(stance)
+	if IWin_CombatVar["reservedRageStance"] then
+		return IWin_CombatVar["reservedRageStance"] == stance
+	end
+	return true
+end
+
 ---- Actions ----
 function IWin:TargetEnemy()
 	if not UnitExists("target") or UnitIsDead("target") or UnitIsFriend("target", "player") then
@@ -386,6 +395,7 @@ end
 
 function IWin:Bloodrage()
 	if IWin:IsSpellLearnt("Bloodrage")
+		and UnitMana("player") < 70
 		and (
 				IWin:IsStanceActive("Defensive Stance")
 			or (
@@ -424,6 +434,26 @@ function IWin:ChargeOpenWorld()
 		end
 		CastSpellByName("Charge")
 		IWin_CombatVar["charge"] = GetTime()
+	end
+end
+
+function IWin:Cleave()
+	if IWin:IsSpellLearnt("Cleave") then
+		if IWin:IsRageAvailable("Cleave") then
+			CastSpellByName("Cleave")
+		else
+			--SpellStopCasting()
+		end
+	end
+end
+
+function IWin:CleaveStance()
+	if IWin:IsStanceActive("Defensive Stance") then
+		if not IWin:IsSpellLearnt("Sweeping Strikes") and IWin:IsSpellLearnt("Berserker Stance") then
+			CastSpellByName("Berserker Stance")
+		elseif IWin:IsSpellLearnt("Battle Stance") then
+			CastSpellByName("Battle Stance")
+		end
 	end
 end
 
@@ -506,7 +536,7 @@ function IWin:MortalStrike()
 end
 
 function IWin:Overpower()
-	if IWin:IsSpellLearnt("Overpower") and IWin:IsOverpowerAvailable() and not IWin:IsOnCooldown("Overpower") and IWin:IsRageAvailable("Overpower") then
+	if IWin:IsSpellLearnt("Overpower") and IWin:IsOverpowerAvailable() and not IWin:IsOnCooldown("Overpower") and IWin:IsRageAvailable("Overpower") and IWin:IsRageReservedStance("Battle Stance") then
 		if not IWin:IsStanceActive("Battle Stance") and (IWin:IsStanceSwapMaxRageLoss(25) or UnitIsPVP("target")) then
 			CastSpellByName("Battle Stance")
 		end
@@ -598,6 +628,20 @@ function IWin:SunderArmorFirstStack()
 	end
 end
 
+function IWin:SweepingStrikes()
+	if IWin:IsSpellLearnt("Sweeping Strikes") and IWin:IsRageReservedStance("Battle Stance") then
+		if IWin:IsTimeToReserveRage("Sweeping Strikes", "cooldown") and UnitAffectingCombat("player") then
+			IWin_CombatVar["reservedRageStance"] = "Battle Stance"
+			if not IWin:IsStanceActive("Battle Stance") then
+				CastSpellByName("Battle Stance")
+			end
+		end
+		if not IWin:IsOnCooldown("Sweeping Strikes") and IWin:IsRageAvailable("Sweeping Strikes") then 
+			CastSpellByName("Sweeping Strikes")
+		end
+	end
+end
+
 function IWin:TankStance()
 	if IWin:IsSpellLearnt("Defensive Stance") then
 		if UnitAffectingCombat("player") and not IWin:IsStanceActive("Defensive Stance") then
@@ -609,9 +653,12 @@ function IWin:TankStance()
 end
 
 function IWin:Whirlwind()
-	if IWin:IsSpellLearnt("Whirlwind") then
-		if IWin:IsTimeToReserveRage("Whirlwind", "cooldown") and not IWin:IsStanceActive("Berserker Stance") and UnitAffectingCombat("player") then
-			CastSpellByName("Berserker Stance")
+	if IWin:IsSpellLearnt("Whirlwind") and IWin:IsRageReservedStance("Berserker Stance") then
+		if IWin:IsTimeToReserveRage("Whirlwind", "cooldown") and UnitAffectingCombat("player") then
+			IWin_CombatVar["reservedRageStance"] = "Berserker Stance"
+			if not IWin:IsStanceActive("Berserker Stance") then
+				CastSpellByName("Berserker Stance")
+			end
 		end
 		if not IWin:IsOnCooldown("Whirlwind") and IWin:IsRageAvailable("Whirlwind") and IWin:IsInMeleeRange() then 
 			CastSpellByName("Whirlwind")
@@ -631,7 +678,9 @@ end
 SLASH_IDPS1 = '/idps'
 function SlashCmdList.IDPS()
 	IWin_CombatVar["reservedRage"] = 0
+	IWin_CombatVar["reservedRageStance"] = nil
 	IWin:TargetEnemy()
+	IWin:ChargeOpenWorld()
 	IWin:DPSStance()
 	IWin:Bloodrage()
 	IWin:BattleShoutFaded()
@@ -649,7 +698,35 @@ function SlashCmdList.IDPS()
 	IWin:SetReservedRage("Whirlwind", "cooldown")
 	IWin:BerserkerRage()
 	IWin:HeroicStrike()
+	IWin:StartAttack()
+end
+
+---- icleave button ----
+SLASH_ICLEAVE1 = '/icleave'
+function SlashCmdList.ICLEAVE()
+	IWin_CombatVar["reservedRage"] = 0
+	IWin_CombatVar["reservedRageStance"] = nil
+	IWin:TargetEnemy()
 	IWin:ChargeOpenWorld()
+	IWin:CleaveStance()
+	IWin:Bloodrage()
+	IWin:BattleShoutFaded()
+	IWin:SetReservedRage("Battle Shout", "buff", "player")
+	IWin:SweepingStrikes()
+	IWin:SetReservedRage("Sweeping Strikes", "cooldown")
+	IWin:Whirlwind()
+	IWin:SetReservedRage("Whirlwind", "cooldown")
+	IWin:Overpower()
+	IWin:Execute()
+	IWin:SetReservedRageExecute()
+	IWin:ShieldSlam()
+	IWin:SetReservedRage("Shield Slam", "cooldown")
+	IWin:MortalStrike()
+	IWin:SetReservedRage("Mortal Strike", "cooldown")
+	IWin:Bloodthirst()
+	IWin:SetReservedRage("Bloodthirst", "cooldown")
+	IWin:BerserkerRage()
+	IWin:Cleave()
 	IWin:StartAttack()
 end
 
@@ -657,6 +734,7 @@ end
 SLASH_ITANK1 = '/itank'
 function SlashCmdList.ITANK()
 	IWin_CombatVar["reservedRage"] = 0
+	IWin_CombatVar["reservedRageStance"] = nil
 	IWin:TargetEnemy()
 	IWin:TankStance()
 	IWin:Bloodrage()
@@ -682,6 +760,7 @@ end
 SLASH_ICHASE1 = '/ichase'
 function SlashCmdList.ICHASE()
 	IWin_CombatVar["reservedRage"] = 0
+	IWin_CombatVar["reservedRageStance"] = nil
 	IWin:TargetEnemy()
 	IWin:Charge()
 	IWin:Intercept()
@@ -693,6 +772,7 @@ end
 SLASH_IKICK1 = '/ikick'
 function SlashCmdList.IKICK()
 	IWin_CombatVar["reservedRage"] = 0
+	IWin_CombatVar["reservedRageStance"] = nil
 	IWin:TargetEnemy()
 	IWin:ShieldBash()
 	IWin:Pummel()
