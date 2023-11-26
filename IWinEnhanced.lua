@@ -415,7 +415,7 @@ end
 function IWin:Bloodrage()
 	if IWin:IsSpellLearnt("Bloodrage")
 		and UnitMana("player") < 70
-		and IWin:GetHealthPercent("player") > 25
+		and IWin:GetHealthPercent("player") > 0.25
 		and (
 				IWin:IsStanceActive("Defensive Stance")
 			or (
