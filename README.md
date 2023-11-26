@@ -7,8 +7,11 @@ Smart macros for Warriors. Make macros with commands. Put them on your action ba
     /idps        Single target DPS rotation
     /icleave     Multi target DPS rotation
     /itank       Single target threat rotation
+    /ihodor      Multi target threat rotation
     /ichase      Stick to your target with Charge, Intercept, Hamstring
     /ikick       Kick with Pummel or Shield Bash
+    /ifeardance  Use Berserker Rage if available
+    /itaunt      Taunt or Mocking Blow if the target is not under another taunt effect
 
 ## Required Addons
 You need one of the following addons:
