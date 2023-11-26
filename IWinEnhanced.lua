@@ -496,7 +496,8 @@ function IWin:Execute()
 end
 
 function IWin:SetReservedRageExecute()
-	if not IWin:IsElite() or IWin:IsExecutePhase() then
+	local lowHealthTarget = (UnitHealthMax("player") * 0.3 > UnitHealth("target"))
+	if lowHealthTarget or IWin:IsExecutePhase() then 
 		IWin:SetReservedRage("Execute", "cooldown")
 	end
 end
