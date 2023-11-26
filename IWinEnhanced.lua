@@ -112,6 +112,15 @@ IWin_RageCost = {
 	["Whirlwind"] = 25,
 }
 
+IWin_Taunt = {
+	"Taunt",
+	"Mocking Blow",
+	"Challenging Shout",
+	"Growl",
+	"Challenging Roar",
+	"Hand of Reckoning",
+}
+
 ---- Functions ----
 function IWin:GetBuffIndex(unit, spell)
 	local index = 1
@@ -343,17 +352,13 @@ function IWin:IsRageReservedStance(stance)
 end
 
 function IWin:IsTaunted()
-	local taunt = IWin:IsBuffActive("target", "Taunt")
-	if taunt then
-		return true
-	end
-	local mockingBlow = IWin:IsBuffActive("target", "Mocking Blow")
-	if mockingBlow then
-		return true
-	end
-	local challengingShout = IWin:IsBuffActive("target", "Challenging Shout")
-	if challengingShout then
-		return true
+	local index = 1
+	while IWin_Taunt[index] do
+		local taunt = IWin:IsBuffActive("target", IWin_Taunt[index])
+		if taunt then
+			return true
+		end
+		index = index + 1
 	end
 	return false
 end
