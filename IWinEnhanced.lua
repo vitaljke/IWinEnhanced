@@ -199,6 +199,24 @@ function IWin:GetBuffRemaining(unit, spell)
 	return 0
 end
 
+function IWin:IsGCDActive()
+    local spellName = "Battle Shout"
+    for i = 1, GetNumSpellTabs() do
+        local _, _, offset, numSpells = GetSpellTabInfo(i)
+        for j = offset + 1, offset + numSpells do
+            if GetSpellName(j, BOOKTYPE_SPELL) == spellName then
+                local start, duration = GetSpellCooldown(j, BOOKTYPE_SPELL)
+                if duration and duration > 0 then
+                    return true -- GCD is active
+                else
+                    return false -- GCD is not active
+                end
+            end
+        end
+    end
+    return false -- Default to not active if the spell isn't found
+end
+
 function IWin:GetCooldownRemaining(spell)
 	local spellID = 1
 	local bookspell = GetSpellName(spellID, "BOOKTYPE_SPELL")
