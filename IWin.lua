@@ -543,7 +543,7 @@ function IWin:Hamstring()
 end
 
 function IWin:HeroicStrike()
-    if IWin:IsSpellLearnt("Heroic Strike") and UnitMana("player") >= 30 then
+    if IWin:IsSpellLearnt("Heroic Strike") and UnitMana("player") >= 50 then
         -- Determine which spell is learned and get its cooldown
         local spellCooldown
         if IWin:IsSpellLearnt("Bloodthirst") then
@@ -813,10 +813,7 @@ function SlashCmdList.IDPS()
     IWin:ReserveExecuteRage()
 	if IWin:IsSpellLearnt("Bloodthirst") and (not IWin:IsOnCooldown("Bloodthirst") or IWin:GetCooldownRemaining("Bloodthirst") < 1) then
 		IWin:Bloodthirst()
-		IWin:UpdateRageReservationForSpell("Bloodthirst", "cooldown")
-	elseif IWin:IsSpellLearnt("Mortal Strike") and (not IWin:IsOnCooldown("Mortal Strike") or IWin:GetCooldownRemaining("Mortal Strike") < 1) then
-		IWin:MortalStrike()
-		IWin:UpdateRageReservationForSpell("Mortal Strike", "cooldown")
+		IWin:UpdateRageReservationForSpell("Bloodthirst", "cooldown")	
 	else
 		IWin:Whirlwind()
 		IWin:UpdateRageReservationForSpell("Whirlwind", "cooldown")
